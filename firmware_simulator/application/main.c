@@ -6,6 +6,7 @@ Container for the Cprimer "Server" application firmware.
 ***********************************************************************************************************************/
 
 #include "configuration.h"
+#include <string.h>
 
 #ifndef SOLUTION
 /***********************************************************************************************************************
@@ -30,6 +31,15 @@ Main Program
 void main(void)
 {
 
+  u32 u32SomeVar;
+  static u8 Main_u8Servers = 0;
+  
+  u32 au32BigArray[] = {5, 4, 3, 2, 1};
+  DrinkType aeDrinkArray[3] = {BEER, SHOOTER};
+  
+  u8 au8String[] = "This is test code!";
+  u32 au32StringSize = sizeof(au8String);
+    
   while(1)
   {
     

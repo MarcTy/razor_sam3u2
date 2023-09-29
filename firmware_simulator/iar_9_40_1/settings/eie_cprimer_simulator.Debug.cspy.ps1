@@ -23,9 +23,9 @@
 
 if ($debugfile -eq "")
 {
-& "D:\IAR\EWARM_9_40_1\common\bin\cspybat" -f "E:\Github\razor_sam3u2\firmware_simulator\iar_9_40_1\settings\eie_cprimer_simulator.Debug.general.xcl" --backend -f "E:\Github\razor_sam3u2\firmware_simulator\iar_9_40_1\settings\eie_cprimer_simulator.Debug.driver.xcl" 
+& "C:\Program Files\IAR Systems\Embedded Workbench 9.2\common\bin\cspybat" -f "C:\Users\marca\OneDrive\Documents\GitHub\razor_sam3u2\firmware_simulator\iar_9_40_1\settings\eie_cprimer_simulator.Debug.general.xcl" --backend -f "C:\Users\marca\OneDrive\Documents\GitHub\razor_sam3u2\firmware_simulator\iar_9_40_1\settings\eie_cprimer_simulator.Debug.driver.xcl" 
 }
 else
 {
-& "D:\IAR\EWARM_9_40_1\common\bin\cspybat" -f "E:\Github\razor_sam3u2\firmware_simulator\iar_9_40_1\settings\eie_cprimer_simulator.Debug.general.xcl" --debug_file=$debugfile --backend -f "E:\Github\razor_sam3u2\firmware_simulator\iar_9_40_1\settings\eie_cprimer_simulator.Debug.driver.xcl" 
+& "C:\Program Files\IAR Systems\Embedded Workbench 9.2\common\bin\cspybat" -f "C:\Users\marca\OneDrive\Documents\GitHub\razor_sam3u2\firmware_simulator\iar_9_40_1\settings\eie_cprimer_simulator.Debug.general.xcl" --debug_file=$debugfile --backend -f "C:\Users\marca\OneDrive\Documents\GitHub\razor_sam3u2\firmware_simulator\iar_9_40_1\settings\eie_cprimer_simulator.Debug.driver.xcl" 
 }
