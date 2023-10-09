@@ -44,6 +44,9 @@ typedef enum {SPI0, UART, USART0, USART1, USART2, USART3} PeripheralType;
 /**********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+/*For hello_world file, blink test*/
+#include "hello_world.h"
+
 /* Common header files */
 #include <stdlib.h>
 #include <string.h>
@@ -93,7 +96,6 @@ Includes
 /* Common application header files */
 #include "debug.h"
 #include "music.h"
-#include "user_app1.h"
 #include "user_app2.h"
 #include "user_app3.h"
 
