@@ -37,22 +37,22 @@ typedef enum
 {
   LOCKED,
   UNLOCKED,
-  MODIFY
+  MODIFY,
 } state;
 
-typedef struct
+static struct
 {
   u8 u8confSet;
   state u8State;
   // Contains numbers between 1 - 3
-  u16 u16Pass[PASS_SIZE];
-  // Indexer for u16Pass
-  u8 u8pp;
+  u32 u32Pass[PASS_SIZE];
+  // Indexer for u32Pass
+  u32 u32pp;
   // Pointer to elements in array
-  u16 u16Entry[PASS_SIZE];
-  // Indexer for u16Entry
-  u8 u8ep;
-} mach;
+  u32 u32Entry[PASS_SIZE];
+  // Indexer for u32Entry
+  u32 u32ep;
+} machine;
 
 /* New variables */
 volatile u32 G_u32UserApp1Flags;                          /*!< @brief Global state flags */
@@ -82,8 +82,6 @@ Function Definitions
 /*! @publicsection */                                                                                            
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void initMach(mach *machine);
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*! @protectedsection */                                                                                            
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -105,6 +103,33 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  
+  // Set initial machine state as well as default password if not been set
+  // Sets inital lED configs
+  LcdCommand(LCD_CLEAR_CMD);
+  LedOff(RED);
+  LedOn(YELLOW);
+      
+  // Sets default password as 1-2-3-0-0-0-0-0-0-0
+  for (size_t i = 0; i < PASS_SIZE; i++) {
+    if (i < 3)
+      machine.u32Pass[i] = (int)i + 1;
+    else
+      machine.u32Pass[i] = 0;
+  }
+      
+  // Sets entry as zero for password input
+  for (size_t i = 0; i < PASS_SIZE; i++) {
+    machine.u32Entry[i] = 0;
+  }
+      
+  // Allow the user to initially modify password, it will be 
+  // locked after 3 seconds
+  machine.u8State = MODIFY;
+  machine.u8confSet = 1;
+  machine.u32ep = 0;
+  machine.u32pp = 3;
+  
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -150,122 +175,123 @@ void UserApp1RunActiveState(void)
 State Machine Function Definitions
 **********************************************************************************************************************/
 /*-------------------------------------------------------------------------------------------------------------------*/
-/* What does this state do? */
+/* Runs every 1 ms*/ 
 static void UserApp1SM_Idle(void)
 {
-    // Just debug your logic, I think its gtg...
-    static mach machine;
     static u32 u32dTimer = 0;
-    static u8 u8passAllow = 0;
-    
-    
-    if (!(machine.u8confSet)) {
-      // Set initial machine state as well as default password if not been set
-      initMach(&machine);
-    } 
-    
+    u8 au8Munlock[] = "Correct password.";
+    u8 au8Mlock[] = "Wrong password.";
+    u8 au8Minput[] = "Enter your password.";
+        
     // 3-Second timer for password entry
-    if (u32dTimer < 3000) {
-      u32dTimer++;
+    if ((u32dTimer < 3000) && !WasButtonPressed(BUTTON3)) {
+       u32dTimer++;
     }
     else if (u32dTimer == 3000) {
-      // Prevent password modification
-      LedToggle(RED);
-      LedToggle(YELLOW);
-      machine.u8State = LOCKED;
+       // Prevent password modification
+       LedOn(RED);
+       LedOff(YELLOW);
+       machine.u8State = LOCKED;
     }
     
-    // Password modification
-    if (WasButtonPressed(BUTTON3) && machine.u8State == MODIFY) {
+    // Password modification (JUST THIS ONE LEFT!!! :))
+    if (IsButtonPressed(BUTTON3) && machine.u8State == MODIFY) {
       
       // Led configs
-      LedOn(GREEN);
-      LedOn(RED);
-      LedBlink(GREEN, LED_2HZ);
-      LedBlink(RED, LED_2HZ);
-      ButtonAcknowledge(BUTTON3)
-      
-      //User password input
-      while (!IsButtonPressed(BUTTON3) || (machine.u8pp < PASS_SIZE))
-      {
-        if (IsButtonPressed(BUTTON1)) {
-          machine.u16Entry[machine.u8pp] = 1;
-          machine.u8pp++;
-        }
-        else if (IsButtonPressed(BUTTON2)) {
-          machine.u16Entry[machine.u8pp] = 2;
-          machine.u8pp++;
-        }
-        else if (IsButtonPressed(BUTTON3)) {
-          machine.u16Entry[machine.u8pp] = 3;
-          machine.u8ep++;
-        } 
-      }
-      
-      // Ensure locked state
-      LedOff(GREEN);
-      LedBlink(RED, 0);
-      machine.u8State = LOCKED; 
+      LedOff(YELLOW);
+      LedBlink(GREEN, LED_8HZ);
+      LedBlink(RED, LED_8HZ);
+      // Entry message
+      LcdCommand(LCD_CLEAR_CMD);
+      LcdMessage(LINE1_START_ADDR, au8Minput);
     }
-    
-    // Password testing
-    if (machine.u8State == LOCKED)
-    {
-      // Take input
-      while (!(IsButtonPressed(BUTTON3)) || (machine.u8ep < PASS_SIZE))
-      {
-        if (IsButtonPressed(BUTTON1)) {
-          machine.u16Entry[machine.u8ep] = 1;
-          machine.u8ep++;
-        }
-        else if (IsButtonPressed(BUTTON2)) {
-          machine.u16Entry[machine.u8ep] = 2;
-          machine.u8ep++;
-        }
-        else if (IsButtonPressed(BUTTON3)) {
-          machine.u16Entry[machine.u8ep] = 3;
-          machine.u8ep++;
-        } 
+    if (WasButtonPressed(BUTTON3) && machine.u8State == MODIFY) {
+      // User password input
+      if (IsButtonPressed(BUTTON0)) {
+        machine.u32Entry[machine.u32pp] = 1;
+        machine.u32pp++;
       }
+      else if (IsButtonPressed(BUTTON1)) {
+        machine.u32Entry[machine.u32pp] = 2;
+        machine.u32pp++;
+      }
+      else if (IsButtonPressed(BUTTON2)) {
+        machine.u32Entry[machine.u32pp] = 3;
+        machine.u32ep++;
+      } else if (IsButtonPressed(BUTTON3)) {
+        ButtonAcknowledge(BUTTON3);
+        // Ensure locked state
+        LedOff(GREEN);
+        LedBlink(RED, LED_0HZ);
+        machine.u8State = LOCKED; 
+      }
+    }
+    // Password testing
+    else if (machine.u8State == LOCKED) {
+      LedOff(BLUE);
+      LedOff(GREEN);
+      LedOff(YELLOW);
+      LedOff(PURPLE);
       
-      //Check if the password entered was correct
-      //First check if the indexers are the same value.
-      //Same value == same password length
-      if (machine.u8ep == machine.u8pp)
-      {
+      // Take input
+      if (WasButtonPressed(BUTTON3)) {
+        ButtonAcknowledge(BUTTON3);
+        
+        // Test protocols
         u8 u8isMatch = 1;
-        for (size_t i = machine.u8pp; i > 0; i--)
-        {
-          if (machine.u16Pass[i] != machine.u16Entry[i]) {
-            u8isMatch = 0;
-            break;
+        if (machine.u32ep == machine.u32pp) {
+          for (size_t i = machine.u32pp; i > 0; i--) {
+            if (machine.u32Pass[i] != machine.u32Entry[i]) {
+              u8isMatch = 0;
+              break;
+            }
           }
         }
+        else {
+          u8isMatch = 0;
+        }
+        // Clear the entry array to accept new input in next iteration
+        for (size_t i = 0; i < PASS_SIZE; i++) {
+          machine.u32Entry[i] = 0;
+        }
+        machine.u32ep = 0;
         if (u8isMatch == 1) {
           // Correct
           machine.u8State = UNLOCKED;
-          LedOn(GREEN);
-          LedBlink(GREEN, LED_2HZ);
+          LedBlink(GREEN, LED_8HZ);
+          LcdCommand(LCD_CLEAR_CMD);
+          LcdMessage(LINE1_START_ADDR, au8Munlock);
         }
         else {
           // Wrong
           machine.u8State = LOCKED;
-          LedOn(RED);
-          LedBlink(RED, LED_2HZ);
+          LedBlink(RED, LED_8HZ);
+          LcdCommand(LCD_CLEAR_CMD);
+          LcdMessage(LINE1_START_ADDR, au8Mlock);
         }
       }
       
-      // Wait for Led response
-      while (1)
-      {
-        if (IsButtonPressed(BUTTON0) || IsButtonPressed(BUTTON1) ||
-            IsButtonPressed(BUTTON2) || IsButtonPressed(BUTTON3))
-          break;
+      else if (WasButtonPressed(BUTTON0)) {
+        // This doesn't increment the pointer?
+        machine.u32Entry[machine.u32ep] = 1;
+        machine.u32ep++;
+        LedOn(YELLOW);
+        ButtonAcknowledge(BUTTON0);
       }
-      LedOff(GREEN);
-      LedBlink(RED, 0);
-           
-    }
+      else if (WasButtonPressed(BUTTON1)) {
+        machine.u32Entry[machine.u32ep] = 2;
+        machine.u32ep++;
+        LedOn(PURPLE);
+        ButtonAcknowledge(BUTTON1);
+      }
+      else if (WasButtonPressed(BUTTON2)) {
+        machine.u32Entry[machine.u32ep] = 3;
+        machine.u32ep++;
+        LedOn(GREEN);
+        ButtonAcknowledge(BUTTON2);
+      }
+    }   
+     
 } /* end UserApp1SM_Idle() */
      
 
@@ -276,35 +302,6 @@ static void UserApp1SM_Error(void)
   
 } /* end UserApp1SM_Error() */
 
-// Sets initial password machine
-void initMach(mach *machine)
-{
-  // Sets inital lED configs
-  LedOff(RED);
-  LedOn(YELLOW);
-  
-  // Sets default password as 1-2-3-0-0-0-0-0-0-0
-  for (size_t i; i < PASS_SIZE; i++)
-  {
-    if (i <= 3)
-      machine->u16Pass[i] = i + 1;
-    else
-      machine->u16Pass[i] = 0;
-  }
-  
-  // Sets entry as zero for password input
-  for (size_t i; i < PASS_SIZE; i++)
-  {
-    machine->u16Entry[i] = 0;
-  }
-  
-  // Allow the user to initially modify password, it will be 
-  // locked after 3 seconds
-  machine->u8State = MODIFY;
-  machine->u8confSet = 1;
-  machine->u8ep = 0;
-  machine->u8pp = 0;
-}
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* End of File                                                                                                        */
 /*--------------------------------------------------------------------------------------------------------------------*/
